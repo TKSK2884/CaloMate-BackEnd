@@ -1,0 +1,22 @@
+{
+    "dependencies": {
+        "@types/express": "^5.0.0",
+        "@types/jsonwebtoken": "^9.0.7",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.6",
+        "express": "^4.21.1",
+        "jsonwebtoken": "^9.0.2",
+        "mysql2": "^3.11.5",
+        "nodemon": "^3.1.7",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.7.2"
+    },
+    "scripts": {
+        "build": "tsc",
+        "start": "yarn build && node dist/server.js",
+        "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' ./src/server.ts"
+    },
+    "devDependencies": {
+        "@types/cors": "^2.8.17"
+    }
+}
