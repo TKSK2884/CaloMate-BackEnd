@@ -1,10 +1,7 @@
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-import { UserInfo } from "../structure/type";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { CustomJwtPayload, UserInfo } from "../structure/type";
 
-dotenv.config();
-
-function generateAccessToken(user: UserInfo) {
+export function generateAccessToken(user: CustomJwtPayload) {
     return jwt.sign(
         { id: user.id, nickname: user.nickname },
         process.env.ACCESS_TOKEN_SECRET ?? "",
@@ -14,7 +11,7 @@ function generateAccessToken(user: UserInfo) {
     );
 }
 
-function generateRefreshToken(user: UserInfo) {
+export function generateRefreshToken(user: CustomJwtPayload) {
     return jwt.sign(
         { id: user.id, nickname: user.nickname },
         process.env.REFRESH_TOKEN_SECRET ?? "",
