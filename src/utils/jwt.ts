@@ -6,7 +6,7 @@ export function generateAccessToken(user: CustomJwtPayload) {
         { id: user.id, nickname: user.nickname },
         process.env.ACCESS_TOKEN_SECRET ?? "",
         {
-            expiresIn: "15m", // 15분
+            expiresIn: "24h", // 24시간
         }
     );
 }
