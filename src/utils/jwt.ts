@@ -20,3 +20,23 @@ export function generateRefreshToken(user: CustomJwtPayload) {
         }
     );
 }
+
+export function verifyAccessToken(
+    authorization: string | undefined
+): jwt.JwtPayload | null {
+    try {
+        const authToken: string | undefined = authorization?.split(" ")[1];
+
+        if (!authToken || authToken === "null") {
+            return null;
+        }
+
+        return jwt.verify(
+            authToken,
+            process.env.ACCESS_TOKEN_SECRET!
+        ) as jwt.JwtPayload;
+    } catch (error) {
+        console.error("AccessToken verification failed:", error);
+        return null;
+    }
+}
