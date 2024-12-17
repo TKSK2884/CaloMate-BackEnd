@@ -1,5 +1,5 @@
 import mysql from "mysql2/promise";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { connectPool } from "./db";
 import { Request } from "express";
 import { ProfileBody, UserInfo, UserProfile } from "../structure/type";
@@ -13,7 +13,7 @@ import { generatePrompt } from "../utils/string";
 import { verifyAccessToken } from "../utils/jwt";
 
 export async function checkProfileHandler(req: Request, res: any) {
-    const user: string | jwt.JwtPayload | null | undefined = verifyAccessToken(
+    const user: JwtPayload | null = verifyAccessToken(
         req.headers.authorization
     );
 
@@ -73,8 +73,9 @@ export async function saveProfileHandler(req: Request, res: any) {
             throw new Error("유효하지 않은 목표");
         }
 
-        const user: string | jwt.JwtPayload | null | undefined =
-            verifyAccessToken(req.headers.authorization);
+        const user: JwtPayload | null = verifyAccessToken(
+            req.headers.authorization
+        );
 
         // user 정보가 있을때
         if (user != null) {
