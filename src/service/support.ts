@@ -205,14 +205,26 @@ export async function generateSupportHandler(req: Request, res: any) {
             });
         }
 
+        if (user != null) {
+            const userInfo = user as { id: number; nickname: string };
+
+            await connectPool.query<mysql.ResultSetHeader>(
+                "INSERT INTO `result` (`question`, `content`, `user_id`) " +
+                    " VALUES (?, ?, ?)",
+                [text, result, userInfo.id]
+            );
+        }
+
         return res.status(200).json({
             success: true,
             data: result,
         });
     } catch (error) {
-        return res.status(400).json({
+        console.error("상담 생성중 에러:", error);
+
+        return res.status(500).json({
             success: false,
-            error: "",
+            error: "Supoort failed to create",
         });
     }
 }
