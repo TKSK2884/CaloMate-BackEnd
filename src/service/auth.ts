@@ -6,12 +6,17 @@ import { Request } from "express";
 import { CustomJwtPayload, UserInfo } from "../structure/type";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 import { getUserById } from "../utils/user";
+import { updateProfileWithToken, updateResultWithToken } from "../utils/result";
 
 const mySalt: string | undefined = process.env.SALT;
 
 export async function loginHandler(req: Request, res: any) {
     try {
-        const { id, password }: { id: string; password: string } = req.body;
+        const {
+            id,
+            password,
+            token,
+        }: { id: string; password: string; token: string | null } = req.body;
 
         if (!id || !password) {
             return res.status(400).json({
@@ -51,9 +56,21 @@ export async function loginHandler(req: Request, res: any) {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
         });
 
+        if (token != null) {
+            const updateResultMessage: string | null =
+                await updateResultWithToken(user.id, token);
+            await updateProfileWithToken(user.id, token);
+
+            return res.status(200).json({
+                success: true,
+                message: updateResultMessage,
+                data: { accessToken: accessToken, user: user },
+            });
+        }
+
         return res.status(200).json({
-            data: { accessToken: accessToken, user: user },
             success: true,
+            data: { accessToken: accessToken, user: user },
         });
     } catch (error) {
         console.error("Error in loginHandler:", error);
