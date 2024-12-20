@@ -175,21 +175,19 @@ export async function generateSupportHandler(req: Request, res: any) {
         req.headers.authorization
     );
 
-    // user정보가 있을때
     if (user != null) {
+        // user정보가 있을때
         const userInfo = user as { id: number; nickname: string };
         profile = await getUserProfileById(userInfo.id);
-    }
-
-    // token정보가 있을때
-    if (token != null) {
+    } else if (token != null) {
+        // token정보가 있을때
         profile = await getUserProfileByToken(token);
     }
 
     if (profile == null) {
         return res.status(500).json({
             success: false,
-            error: "No profile information",
+            error: "Profile information not found.",
         });
     }
 
@@ -212,6 +210,12 @@ export async function generateSupportHandler(req: Request, res: any) {
                 "INSERT INTO `result` (`question`, `content`, `user_id`) " +
                     " VALUES (?, ?, ?)",
                 [text, result, userInfo.id]
+            );
+        } else if (token != null) {
+            await connectPool.query<mysql.ResultSetHeader>(
+                "INSERT INTO `result` (`question`, `content`, `token`) " +
+                    " VALUES (?, ?, ?)",
+                [text, result, token]
             );
         }
 
