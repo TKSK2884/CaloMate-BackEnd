@@ -9,6 +9,12 @@ import {
     refreshTokenHandler,
     signupHandler,
 } from "./service/auth";
+import {
+    checkProfileHandler,
+    generateSupportHandler,
+    saveProfileHandler,
+} from "./service/support";
+import { mypageProfileHandler, mypagehistoryHandler } from "./service/mypage";
 
 dotenv.config();
 
@@ -31,6 +37,13 @@ app.post("/auth/login", loginHandler);
 app.post("/auth/signup", signupHandler);
 app.post("/auth/refresh", refreshTokenHandler);
 app.post("/auth/logout", logoutHandler);
+
+app.get("/profile/check", checkProfileHandler);
+app.post("/profile/save", saveProfileHandler);
+app.post("/generate/support", generateSupportHandler);
+
+app.get("/mypage/profile", mypageProfileHandler);
+app.get("/mypage/history", mypagehistoryHandler);
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
