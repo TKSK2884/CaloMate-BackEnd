@@ -3,10 +3,11 @@ import mysql from "mysql2/promise";
 import jwt from "jsonwebtoken";
 import { connectPool } from "./db";
 import { Request } from "express";
-import { CustomJwtPayload, UserInfo } from "../structure/type";
+import { CustomJwtPayload } from "../structure/type";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
-import { getUserById } from "../utils/user";
+import { getUserById, searchAccountID, searchLinkedID } from "../utils/user";
 import { updateProfileWithToken, updateResultWithToken } from "../utils/result";
+import { kakaoLogin } from "../utils/kakao";
 
 const mySalt: string | undefined = process.env.SALT;
 
