@@ -107,3 +107,43 @@ export async function getUserProfileById(
         return null;
     }
 }
+
+export async function searchAccountID(userId: string): Promise<string> {
+    let linkedID: string = await searchLinkedID(userId);
+    // Search linkedID -> Search accountID And return accountID
+    if (linkedID == "") {
+        return "";
+    }
+
+    let [result] = (await connectPool.query(
+        "SELECT * FROM `account` WHERE `social_linked_id` = ?",
+        [linkedID]
+    )) as mysql.RowDataPacket[];
+
+    if (result.length == 0) {
+        return "";
+    }
+    let id: string = result[0].id;
+    return id;
+}
+
+export async function searchLinkedID(userId: string): Promise<string> {
+    // Search linkedID -> return linkedID
+
+    if (userId == "") {
+        return "";
+    }
+
+    let [result] = await connectPool.query<mysql.RowDataPacket[]>(
+        "SELECT * FROM `linked_user` WHERE `user_id` = ?",
+        [userId]
+    );
+
+    if (result.length == 0) {
+        return "";
+    }
+
+    const id: string = result[0].id ?? "";
+
+    return id;
+}
