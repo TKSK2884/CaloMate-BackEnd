@@ -218,3 +218,111 @@ export async function refreshTokenHandler(req: Request, res: any) {
             .json({ success: false, message: "Invalid refresh token." });
     }
 }
+
+export async function kakaoTokenHandler(req: Request, res: any) {
+    try {
+        const { code }: { code: string } = req.body;
+
+        if (!code) {
+            return res.status(400).json({
+                success: false,
+                error: "Missing code",
+            });
+        }
+
+        const tokenUrl: string = "https://kauth.kakao.com/oauth/token";
+
+        const kakaoLoginInfo = await kakaoLogin(code, tokenUrl);
+
+        if (kakaoLoginInfo == null) {
+            return res.status(500).json({
+                success: false,
+                error: "Failed to login to Kakao",
+            });
+        }
+
+        const fetchedID: string = kakaoLoginInfo.id;
+        const fetchedNickname: string = kakaoLoginInfo.nickname;
+
+        if (fetchedID == "" || fetchedNickname == "") {
+            return res.status(400).json({
+                success: false,
+                error: "Failed to login to Kakao",
+            });
+        }
+
+        const linkService: string = "kakao";
+        const userType: number = 1;
+
+        const [result] = (await connectPool.query<mysql.RowDataPacket[]>(
+            "SELECT * FROM `linked_user` WHERE `user_id` = ? " +
+                "AND `user_nickname` = ? AND `linked_service` = ?",
+            [fetchedID, fetchedNickname, linkService]
+        )) as mysql.RowDataPacket[];
+
+        if (result.length != 0) {
+            const user: CustomJwtPayload = {
+                id: result[0].id,
+                nickname: result[0].nickname,
+            };
+
+            const accessToken = generateAccessToken(user);
+            const refreshToken = generateRefreshToken(user);
+
+            res.cookie("refreshToken", refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+            });
+
+            return res.status(200).json({
+                success: true,
+                data: { accessToken: accessToken, user: user },
+            });
+        }
+
+        await connectPool.query(
+            "INSERT INTO `linked_user`" +
+                " (`user_id`, `user_nickname`, `linked_service`)" +
+                " VALUES (?,?,?)",
+            [fetchedID, fetchedNickname, linkService]
+        );
+
+        const socialLinkedID: string = await searchLinkedID(fetchedID);
+
+        if (socialLinkedID == "") {
+            return res.status(400).json({
+                success: false,
+                error: "Bad request",
+            });
+        }
+
+        await connectPool.query(
+            "INSERT INTO `account` " +
+                "(`social_linked_id`, `nickname` , `user_type`)" +
+                " VALUES (?,?,?)",
+            [socialLinkedID, fetchedNickname, userType]
+        );
+
+        const user: CustomJwtPayload = {
+            id: await searchAccountID(fetchedID),
+            nickname: fetchedNickname,
+        };
+
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: { accessToken: accessToken, user: user },
+        });
+    } catch (error) {
+        console.error("카카오 토큰 핸들러 에러:", error);
+    }
+}
