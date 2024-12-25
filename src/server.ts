@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import init from "./service/db";
 import dotenv from "dotenv";
 import {
+    kakaoTokenHandler,
     loginHandler,
     logoutHandler,
     refreshTokenHandler,
@@ -37,6 +38,7 @@ app.post("/auth/login", loginHandler);
 app.post("/auth/signup", signupHandler);
 app.post("/auth/refresh", refreshTokenHandler);
 app.post("/auth/logout", logoutHandler);
+app.post("/kakao/token", kakaoTokenHandler);
 
 app.get("/profile/check", checkProfileHandler);
 app.post("/profile/save", saveProfileHandler);
