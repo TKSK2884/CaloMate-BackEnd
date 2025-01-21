@@ -108,11 +108,11 @@ export async function getUserProfileById(
     }
 }
 
-export async function searchAccountID(userId: string): Promise<string> {
+export async function searchAccountID(userId: string): Promise<number | null> {
     let linkedID: string = await searchLinkedID(userId);
     // Search linkedID -> Search accountID And return accountID
     if (linkedID == "") {
-        return "";
+        return null;
     }
 
     let [result] = (await connectPool.query(
@@ -121,9 +121,9 @@ export async function searchAccountID(userId: string): Promise<string> {
     )) as mysql.RowDataPacket[];
 
     if (result.length == 0) {
-        return "";
+        return null;
     }
-    let id: string = result[0].id;
+    let id: number = result[0].id;
     return id;
 }
 
