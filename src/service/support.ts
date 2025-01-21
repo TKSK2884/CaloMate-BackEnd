@@ -81,18 +81,6 @@ export async function saveProfileHandler(req: Request, res: any) {
         if (user != null) {
             const userInfo = user as { id: number; nickname: string };
 
-            // const [result] = await connectPool.query<mysql.RowDataPacket[]>(
-            //     "SELECT COUNT(*) AS count FROM `profile` WHERE `user_id` = ?",
-            //     [userInfo.id]
-            // );
-
-            // if (result[0].count > 0) {
-            //     return res.status(200).json({
-            //         success: true,
-            //         message: "이미 등록된 프로필이 존재합니다.",
-            //     });
-            // }
-
             const [save] = await connectPool.query<mysql.ResultSetHeader>(
                 "INSERT INTO `profile` (`age`, `gender`, `height`, `weight`, `activityLevel`, `target`, `user_id`)" +
                     " VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -111,13 +99,17 @@ export async function saveProfileHandler(req: Request, res: any) {
                 console.log("프로필이 새로 추가되었습니다.");
             } else {
                 console.error("프로필 추가 실패");
+                return res.status(400).json({
+                    success: false,
+                    error: "Profile failed to create",
+                });
             }
 
             return res.status(201).json({
                 success: true,
-                message: "프로필 등록 성공",
             });
         }
+
         // user 정보가 없을때
         else {
             const token: string = generateToken();
@@ -140,6 +132,10 @@ export async function saveProfileHandler(req: Request, res: any) {
                 console.log("프로필이 새로 추가되었습니다.");
             } else {
                 console.error("프로필 추가 실패");
+                return res.status(400).json({
+                    success: false,
+                    error: "Profile failed to create",
+                });
             }
 
             return res.status(201).json({
