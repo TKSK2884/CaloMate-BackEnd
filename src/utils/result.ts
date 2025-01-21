@@ -1,7 +1,7 @@
 import mysql from "mysql2/promise";
 import { connectPool } from "../service/db";
 
-export async function updateResultWithToken(id: string, token: string) {
+export async function updateResultWithToken(id: number, token: string) {
     try {
         const [save] = await connectPool.query<mysql.ResultSetHeader>(
             "UPDATE `result` SET `user_id` = ? WHERE `user_id` IS NULL AND `token` = ?",
@@ -19,7 +19,7 @@ export async function updateResultWithToken(id: string, token: string) {
     }
 }
 
-export async function updateProfileWithToken(id: string, token: string) {
+export async function updateProfileWithToken(id: number, token: string) {
     try {
         const [save] = await connectPool.query<mysql.ResultSetHeader>(
             "UPDATE `profile` SET `user_id` = ? WHERE `user_id` IS NULL AND `token` = ?",

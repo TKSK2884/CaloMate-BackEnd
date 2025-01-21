@@ -6,7 +6,7 @@ export interface UserInfo {
 }
 
 export interface CustomJwtPayload extends JwtPayload {
-    id: string;
+    id: number;
     nickname: string;
 }
 

@@ -15,7 +15,11 @@ import {
     generateSupportHandler,
     saveProfileHandler,
 } from "./service/support";
-import { mypageProfileHandler, mypagehistoryHandler } from "./service/mypage";
+import {
+    mypageProfileHandler,
+    mypageSaveProfileHandler,
+    mypagehistoryHandler,
+} from "./service/mypage";
 
 dotenv.config();
 
@@ -46,6 +50,7 @@ app.post("/generate/support", generateSupportHandler);
 
 app.get("/mypage/profile", mypageProfileHandler);
 app.get("/mypage/history", mypagehistoryHandler);
+app.post("/mypage/save", mypageSaveProfileHandler);
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);

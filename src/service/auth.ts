@@ -5,9 +5,15 @@ import { connectPool } from "./db";
 import { Request } from "express";
 import { CustomJwtPayload } from "../structure/type";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
-import { getUserById, searchAccountID, searchLinkedID } from "../utils/user";
+import {
+    getUserById,
+    getUserProfileById,
+    searchAccountID,
+    searchLinkedID,
+} from "../utils/user";
 import { updateProfileWithToken, updateResultWithToken } from "../utils/result";
 import { kakaoLogin } from "../utils/kakao";
+import { UserProfile } from "../structure/type";
 
 const mySalt: string | undefined = process.env.SALT;
 
@@ -68,10 +74,17 @@ export async function loginHandler(req: Request, res: any) {
                 data: { accessToken: accessToken, user: user },
             });
         }
+        const userProfile: UserProfile | null = await getUserProfileById(
+            user.id
+        );
 
         return res.status(200).json({
             success: true,
-            data: { accessToken: accessToken, user: user },
+            data: {
+                accessToken: accessToken,
+                user: user,
+                userProfile: userProfile,
+            },
         });
     } catch (error) {
         console.error("Error in loginHandler:", error);
@@ -203,12 +216,20 @@ export async function refreshTokenHandler(req: Request, res: any) {
             throw new Error("Invalid token payload");
         }
 
-        const newAccessToken = generateAccessToken(user as CustomJwtPayload);
+        const convertedUser = user as CustomJwtPayload;
+
+        const userProfile: UserProfile | null = await getUserProfileById(
+            convertedUser.id
+        );
+
+        const newAccessToken = generateAccessToken(convertedUser);
 
         return res.status(200).json({
             success: true,
             data: {
                 accessToken: newAccessToken,
+                user: convertedUser,
+                userProfile: userProfile,
             },
         });
     } catch (error) {
@@ -304,8 +325,17 @@ export async function kakaoTokenHandler(req: Request, res: any) {
             [socialLinkedID, fetchedNickname, userType]
         );
 
+        const userId: number | null = await searchAccountID(fetchedID);
+
+        if (userId == null) {
+            return res.status(400).json({
+                success: false,
+                error: "Bad request",
+            });
+        }
+
         const user: CustomJwtPayload = {
-            id: await searchAccountID(fetchedID),
+            id: userId,
             nickname: fetchedNickname,
         };
 
