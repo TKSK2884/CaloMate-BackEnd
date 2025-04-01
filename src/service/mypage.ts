@@ -134,7 +134,7 @@ export async function mypagehistoryHandler(req: Request, res: any) {
 
     try {
         const [result] = await connectPool.query<mysql.RowDataPacket[]>(
-            "SELECT `question`, `content`, `created_at` FROM `result` WHERE `user_id` = ? ORDER BY `created_at` DESC LIMIT 5",
+            "SELECT `content`, `created_at` FROM `result` WHERE `user_id` = ? ORDER BY `created_at` DESC LIMIT 5",
             [userInfo.id]
         );
 
