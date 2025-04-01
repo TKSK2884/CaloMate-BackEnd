@@ -68,12 +68,24 @@ export async function loginHandler(req: Request, res: any) {
                 await updateResultWithToken(user.id, token);
             await updateProfileWithToken(user.id, token);
 
+            await getUserProfileById(user.id);
+            await getUserProfileById(user.id);
+
+            const userProfile: UserProfile | null = await getUserProfileById(
+                user.id
+            );
+
             return res.status(200).json({
                 success: true,
                 message: updateResultMessage,
-                data: { accessToken: accessToken, user: user },
+                data: {
+                    accessToken: accessToken,
+                    user: user,
+                    userProfile: userProfile,
+                },
             });
         }
+
         const userProfile: UserProfile | null = await getUserProfileById(
             user.id
         );

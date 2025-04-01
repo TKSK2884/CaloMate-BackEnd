@@ -32,3 +32,25 @@ export interface UserProfile {
     activityLevel: string;
     target: string;
 }
+
+export interface Meal {
+    meal: string;
+    calories: number;
+    carbs: number;
+    protein: number;
+    fat: number;
+}
+
+export interface CheckedMeal extends Meal {
+    checked: boolean;
+}
+
+export interface AIResponse {
+    diet: Meal[];
+    workout: string[];
+}
+
+export interface WeekDay {
+    date: string;
+    label: string;
+}

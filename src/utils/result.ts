@@ -9,7 +9,7 @@ export async function updateResultWithToken(id: number, token: string) {
         );
 
         if (save.affectedRows > 0) {
-            return "상담 결과가 저장되었습니다.";
+            return "결과가 저장되었습니다.";
         } else {
             return null;
         }

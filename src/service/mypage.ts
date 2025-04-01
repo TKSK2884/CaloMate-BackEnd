@@ -1,8 +1,10 @@
 import mysql from "mysql2/promise";
+import dayjs from "dayjs";
 import { connectPool } from "./db";
 import { Request } from "express";
 import { JwtPayload } from "jsonwebtoken";
 import { verifyAccessToken } from "../utils/jwt";
+import { getKoreanWeekDates } from "../utils/day";
 
 export async function mypageProfileHandler(req: Request, res: any) {
     const user: JwtPayload | null = verifyAccessToken(
@@ -47,23 +49,23 @@ export async function mypageProfileHandler(req: Request, res: any) {
 
 export async function mypageSaveProfileHandler(req: Request, res: any) {
     try {
-        const user: JwtPayload | null = verifyAccessToken(
-            req.headers.authorization
-        );
-
         const { weight } = req.body;
-
-        if (user == null) {
-            return res.status(400).json({
-                success: false,
-                error: "Invalid access token",
-            });
-        }
 
         if (weight == null) {
             return res.status(400).json({
                 success: false,
                 error: "Invalid weight info",
+            });
+        }
+
+        const user: JwtPayload | null = verifyAccessToken(
+            req.headers.authorization
+        );
+
+        if (user == null) {
+            return res.status(400).json({
+                success: false,
+                error: "Invalid access token",
             });
         }
 
@@ -118,6 +120,61 @@ export async function mypageSaveProfileHandler(req: Request, res: any) {
     }
 }
 
+export async function mypageChartHandler(req: Request, res: any) {
+    const user: JwtPayload | null = verifyAccessToken(
+        req.headers.authorization
+    );
+
+    if (user == null) {
+        return res.status(400).json({
+            success: false,
+            error: "Invalid access token",
+        });
+    }
+
+    const userInfo = user as { id: number; nickname: string };
+
+    const weekDates: string[] = getKoreanWeekDates();
+
+    const startDate: string = weekDates[0];
+    const endDate: string = weekDates[6];
+
+    const [logs] = await connectPool.query<mysql.RowDataPacket[]>(
+        `SELECT 
+            DATE(date) as date,
+            COUNT(*) as total,
+            SUM(CASE WHEN checked = 1 THEN 1 ELSE 0 END) as completed
+        FROM diet_logs
+        WHERE user_id = ? AND date BETWEEN ? AND ?
+        GROUP BY DATE(date)
+        ORDER BY DATE(date)`,
+        [userInfo.id, startDate, endDate]
+    );
+
+    const formattedLogs = logs.map((log) => ({
+        ...log,
+        date: dayjs(log.date).format("YYYY-MM-DD"),
+        total: Number(log.total),
+        completed: Number(log.completed),
+    }));
+
+    const logsMap = new Map(formattedLogs.map((log) => [log.date, log]));
+
+    const weekStats = weekDates.map((date) => {
+        const dayLog = logsMap.get(date);
+        const total = dayLog?.total ?? 0;
+        const completed = dayLog?.completed ?? 0;
+        const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        return { date, total, completed, rate };
+    });
+
+    return res.status(200).json({
+        success: true,
+        data: weekStats,
+    });
+}
+
 export async function mypagehistoryHandler(req: Request, res: any) {
     const user: JwtPayload | null = verifyAccessToken(
         req.headers.authorization
@@ -134,7 +191,7 @@ export async function mypagehistoryHandler(req: Request, res: any) {
 
     try {
         const [result] = await connectPool.query<mysql.RowDataPacket[]>(
-            "SELECT `question`, `content`, `created_at` FROM `result` WHERE `user_id` = ? ORDER BY `created_at` DESC LIMIT 5",
+            "SELECT `content`, `created_at` FROM `result` WHERE `user_id` = ? ORDER BY `created_at` DESC LIMIT 5",
             [userInfo.id]
         );
 

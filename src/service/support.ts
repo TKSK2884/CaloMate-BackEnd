@@ -2,7 +2,13 @@ import mysql from "mysql2/promise";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { connectPool } from "./db";
 import { Request } from "express";
-import { ProfileBody, UserInfo, UserProfile } from "../structure/type";
+import {
+    AIResponse,
+    Meal,
+    ProfileBody,
+    UserInfo,
+    UserProfile,
+} from "../structure/type";
 import {
     generateToken,
     getUserProfileById,
@@ -155,15 +161,33 @@ export async function saveProfileHandler(req: Request, res: any) {
     }
 }
 
-export async function generateSupportHandler(req: Request, res: any) {
-    const { text, token }: { text: string; token: string } = req.body;
+export async function checkProfileByTokenHandler(req: Request, res: any) {
+    const token = req.query.token as string;
 
-    if (text.trim() == "") {
+    if (!token) {
         return res.status(400).json({
             success: false,
-            error: "Text does not exist.",
+            error: "Token not found.",
         });
     }
+
+    const profile: UserProfile | null = await getUserProfileByToken(token);
+
+    if (profile == null) {
+        return res.status(500).json({
+            success: false,
+            error: "Profile information not found.",
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        data: profile,
+    });
+}
+
+export async function generateSupportHandler(req: Request, res: any) {
+    const { token }: { token: string } = req.body;
 
     let profile: UserProfile | null = null;
 
@@ -187,7 +211,7 @@ export async function generateSupportHandler(req: Request, res: any) {
         });
     }
 
-    const prompt = generatePrompt(profile) + " " + text;
+    const prompt = generatePrompt(profile);
 
     try {
         const result: string | null = await callOpenAIAPI(prompt);
@@ -202,22 +226,57 @@ export async function generateSupportHandler(req: Request, res: any) {
         if (user != null) {
             const userInfo = user as { id: number; nickname: string };
 
-            await connectPool.query<mysql.ResultSetHeader>(
-                "INSERT INTO `result` (`question`, `content`, `user_id`) " +
-                    " VALUES (?, ?, ?)",
-                [text, result, userInfo.id]
+            const [save] = await connectPool.query<mysql.ResultSetHeader>(
+                "INSERT INTO `result` (`content`, `user_id`) " +
+                    " VALUES (?, ?)",
+                [result, userInfo.id]
             );
+
+            const resultId: number = save.insertId;
+            const today: string = new Date().toISOString().split("T")[0];
+
+            const convertedResult: AIResponse = JSON.parse(result);
+
+            for (const item of convertedResult.diet) {
+                await connectPool.query(
+                    "INSERT INTO diet_logs (user_id, result_id, meal, calories, carbs, protein, fat, date, checked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        userInfo.id,
+                        resultId,
+                        item.meal,
+                        item.calories,
+                        item.carbs,
+                        item.protein,
+                        item.fat,
+                        today,
+                        false,
+                    ]
+                );
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    diet: convertedResult.diet,
+                    workout: convertedResult.workout,
+                    resultId: resultId,
+                },
+            });
         } else if (token != null) {
             await connectPool.query<mysql.ResultSetHeader>(
-                "INSERT INTO `result` (`question`, `content`, `token`) " +
-                    " VALUES (?, ?, ?)",
-                [text, result, token]
+                "INSERT INTO `result` (`content`, `token`) " + " VALUES (?, ?)",
+                [result, token]
             );
         }
 
+        const convertedResult: AIResponse = JSON.parse(result);
+
         return res.status(200).json({
             success: true,
-            data: result,
+            data: {
+                diet: convertedResult.diet,
+                workout: convertedResult.workout,
+            },
         });
     } catch (error) {
         console.error("상담 생성중 에러:", error);
