@@ -12,6 +12,7 @@ export async function checkDietLogHandler(req: Request, res: any) {
             date,
             checked,
         }: { meal: string; date: string; checked: boolean } = req.body;
+
         const user: JwtPayload | null = verifyAccessToken(
             req.headers.authorization
         );
@@ -41,7 +42,7 @@ export async function checkDietLogHandler(req: Request, res: any) {
 
         const [save] = await connectPool.query<mysql.ResultSetHeader>(
             "UPDATE diet_logs SET checked = ? WHERE user_id = ? AND meal = ? AND date = ? AND result_id = ?",
-            [checked, user.id, meal, date, resultId]
+            [checked, userInfo.id, meal, date, resultId]
         );
 
         return res.status(200).json({
